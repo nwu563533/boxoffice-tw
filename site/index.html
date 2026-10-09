@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>國片票房觀察</title>
+<meta name="description" content="用全國票房開放資料，看台灣電影怎麼被賣出去。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=2">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="common.js?v=2"></script>
+</head>
+<body>
+<nav class="nav wrap"><a href="index.html" aria-current="page">案例分析</a><a href="tracker.html">票房追蹤</a></nav>
+<header class="wrap">
+  <h1>國片票房觀察</h1>
+  <p class="lede">用全國票房開放資料，看台灣電影怎麼被賣出去：哪個行銷動作之後，票房動了。</p>
+</header>
+
+<main class="wrap">
+  <section id="cases">
+    <h2>案例分析</h2>
+    <div class="panel">
+      <p class="sub" style="margin:0 0 12px">大濛：週末票房（長條）與維基百科條目每週瀏覽量（線）</p>
+      <div class="chart"><canvas id="caseChart"></canvas></div>
+    </div>
+    <article class="prose" id="caseMist">讀取中⋯⋯</article>
+  </section>
+
+  <section>
+    <h2>分析用的影片</h2>
+    <p class="sub">點一張卡片，下面會換成那部片的票房曲線與行銷時間點。曲線是<b>週末（五～日）票房</b>，灰線是院數，紅色長條是那一週有行銷動作。</p>
+    <div class="cards" id="cards"></div>
+    <div class="panel">
+      <div class="chart"><canvas id="filmChart"></canvas></div>
+      <div class="empty" id="filmEmpty" hidden></div>
+      <ul class="events" id="events"></ul>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  資料來源：國家電影及視聽文化中心「全國電影票房統計」（開放資料與單片查詢）；行銷事件來自新聞與戲院、官方公告，每筆附來源；
+  關注度來自 Wikimedia Pageviews API。<br>
+  製作：Nicole Wu
+</footer>
+
+<script>
+let chart, data;
+
+fetch('data.json').then(r => r.json()).then(d => {
+  data = d;
+  const cards = document.getElementById('cards');
+  d.films.forEach((f, i) => {
+    const b = document.createElement('button');
+    b.className = 'card';
+    b.setAttribute('aria-pressed', i === 0);
+    b.innerHTML = `<div class="tag">${f.group}</div><div class="name">${f.name}</div>
+      <div class="num">${fmt(f.amount)}</div>
+      <div class="small">${f.release} 上映｜${f.distributor || '—'}<br>最多 ${f.theaters} 院・${Math.round(f.tickets).toLocaleString()} 張</div>`;
+    b.onclick = () => { cards.querySelectorAll('.card').forEach(c => c.setAttribute('aria-pressed', c === b)); showFilm(f); };
+    cards.appendChild(b);
+  });
+  if (d.films.length) showFilm(d.films[0]);
+  caseChart();
+});
+
+fetch('cases/' + encodeURIComponent('大濛') + '.md').then(r => r.text()).then(md => {
+  document.getElementById('caseMist').innerHTML = marked.parse(md);
+});
+
+function caseChart() {
+  const f = data.films.find(x => x.name === '大濛');
+  if (!f) return;
+  const s = f.weekend.filter(w => w.week >= '2025-11-09' && w.week <= '2026-03-01');
+  const views = Object.fromEntries(f.wiki.map(w => [w.week, w.views]));
+  new Chart(document.getElementById('caseChart'), {
+    data: {
+      labels: s.map(w => w.start.slice(5).replace('-', '/')),
+      datasets: [
+        { type: 'bar', label: '週末票房', data: s.map(w => w.amount), backgroundColor: css('--bar'), borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'line', label: '維基瀏覽量（週）', data: s.map(w => views[w.week] ?? null), borderColor: css('--accent'), borderWidth: 2, pointRadius: 2, tension: .25, yAxisID: 'y1', order: 1 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: css('--muted') } },
+        tooltip: { callbacks: { label: c => c.datasetIndex === 0 ? fmt(c.raw) + '元' : Math.round(c.raw).toLocaleString() + ' 次' } } },
+      scales: {
+        x: { ticks: { color: css('--muted') }, grid: { display: false } },
+        y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') } },
+        y1: { position: 'right', ticks: { color: css('--muted'), callback: v => fmt(v) + '次' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function showFilm(f) {
+  const empty = document.getElementById('filmEmpty');
+  const canvas = document.getElementById('filmChart');
+  if (chart) chart.destroy();
+  document.getElementById('events').innerHTML = f.events.map(e =>
+    `<li><b>${e.date}</b>${e.type ? '［'+e.type+'］' : ''}${e.link ? `<a href="${e.link}" target="_blank" rel="noopener">${e.text}</a>` : e.text}</li>`).join('');
+  let series = f.weekend.length ? f.weekend : f.weekly;
+  while (series.length && !series[series.length - 1].amount) series = series.slice(0, -1);  // 下檔後的空週末不畫
+  if (!series.length) {
+    canvas.parentElement.hidden = true; empty.hidden = false;
+    empty.textContent = `《${f.name}》的每週明細還沒匯入。目前只有累計：${fmt(f.amount)}。`;
+    return;
+  }
+  canvas.parentElement.hidden = false; empty.hidden = true;
+  const evWeeks = new Set(f.events.map(e => weekOf(e.date, series)));
+  chart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: series.map(w => w.start ? w.start.slice(5).replace('-', '/') : w.week),
+      datasets: [{
+        label: f.weekend.length ? '週末票房' : '當週票房', data: series.map(w => w.amount),
+        backgroundColor: series.map(w => evWeeks.has(w.week) ? css('--accent') : css('--bar')),
+        borderRadius: 3, yAxisID: 'y', order: 2
+      }, {
+        type: 'line', label: '院數', data: series.map(w => w.theaters), yAxisID: 'y1', order: 1,
+        borderColor: css('--muted'), borderWidth: 1.5, pointRadius: 0, tension: .25
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { filter: c => c.datasetIndex === 0, callbacks: { label: c => fmt(c.raw) + '元', afterLabel: c => {
+          const w = series[c.dataIndex];
+          const evs = f.events.filter(e => weekOf(e.date, series) === w.week);
+          return [w.theaters + ' 院・' + Math.round(w.tickets).toLocaleString() + ' 張', ...evs.map(e => '・' + e.text)];
+        } } } },
+      scales: {
+        x: { ticks: { color: css('--muted') }, grid: { display: false } },
+        y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') } },
+        y1: { position: 'right', ticks: { color: css('--muted'), callback: v => v + ' 院' }, grid: { display: false } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
