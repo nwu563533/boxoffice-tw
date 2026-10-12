@@ -7,7 +7,7 @@
 <meta name="description" content="用全國票房開放資料，看台灣電影怎麼被賣出去。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="common.js?v=2"></script>
@@ -22,11 +22,12 @@
 <main class="wrap">
   <section id="cases">
     <h2>案例分析</h2>
+    <div class="tabs" role="tablist" id="caseTabs"></div>
     <div class="panel">
-      <p class="sub" style="margin:0 0 12px">大濛：週末票房（長條）與維基百科條目每週瀏覽量（線）</p>
+      <p class="sub" style="margin:0 0 12px" id="caseCaption"></p>
       <div class="chart"><canvas id="caseChart"></canvas></div>
     </div>
-    <article class="prose" id="caseMist">讀取中⋯⋯</article>
+    <article class="prose" id="caseText">讀取中⋯⋯</article>
   </section>
 
   <section>
@@ -48,7 +49,13 @@
 </footer>
 
 <script>
-let chart, data;
+let chart, data, caseChartObj;
+// 案例分析：每篇一個按鈕。range 是圖上要畫的週末區間
+const CASES = [
+  { name: '大濛', from: '2025-11-09', to: '2026-03-01' },
+  { name: '冠軍之路', from: '2025-12-07', to: '2026-04-05' }
+];
+const caseMd = {};
 
 fetch('data.json').then(r => r.json()).then(d => {
   data = d;
@@ -64,19 +71,37 @@ fetch('data.json').then(r => r.json()).then(d => {
     cards.appendChild(b);
   });
   if (d.films.length) showFilm(d.films[0]);
-  caseChart();
+  const tabs = document.getElementById('caseTabs');
+  CASES.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'tab'; b.setAttribute('role', 'tab'); b.textContent = c.name;
+    b.onclick = () => showCase(i);
+    tabs.appendChild(b);
+  });
+  showCase(0);
 });
 
-fetch('cases/' + encodeURIComponent('大濛') + '.md').then(r => r.text()).then(md => {
-  document.getElementById('caseMist').innerHTML = marked.parse(md);
-});
+function showCase(i) {
+  const c = CASES[i];
+  document.querySelectorAll('#caseTabs .tab').forEach((b, j) => b.setAttribute('aria-selected', i === j));
+  document.getElementById('caseCaption').textContent = c.name + '：週末票房（長條）與維基百科條目每週瀏覽量（線）';
+  caseChart(c);
+  const box = document.getElementById('caseText');
+  if (caseMd[c.name]) { box.innerHTML = caseMd[c.name]; return; }
+  box.textContent = '讀取中⋯⋯';
+  fetch('cases/' + encodeURIComponent(c.name) + '.md').then(r => r.text()).then(md => {
+    caseMd[c.name] = marked.parse(md);
+    if (document.querySelector('#caseTabs .tab[aria-selected="true"]')?.textContent === c.name) box.innerHTML = caseMd[c.name];
+  });
+}
 
-function caseChart() {
-  const f = data.films.find(x => x.name === '大濛');
+function caseChart(c) {
+  if (caseChartObj) caseChartObj.destroy();
+  const f = data.films.find(x => x.name === c.name);
   if (!f) return;
-  const s = f.weekend.filter(w => w.week >= '2025-11-09' && w.week <= '2026-03-01');
+  const s = f.weekend.filter(w => w.week >= c.from && w.week <= c.to);
   const views = Object.fromEntries(f.wiki.map(w => [w.week, w.views]));
-  new Chart(document.getElementById('caseChart'), {
+  caseChartObj = new Chart(document.getElementById('caseChart'), {
     data: {
       labels: s.map(w => w.start.slice(5).replace('-', '/')),
       datasets: [
