@@ -70,6 +70,24 @@ def main():
                 wk[end] = wk.get(end, 0) + int(r['瀏覽量'])
         wiki[p.stem] = [{'week': k, 'views': v} for k, v in wk.items()]
 
+    # 案例用的多條時間線（片方／媒體／明星宣傳／網路聲量）、新聞報導的累計里程碑、PTT 每週發文數
+    timeline, milestones, ptt = {}, {}, {}
+    for p in sorted((D / 'timeline').glob('*.csv')):
+        with open(p, encoding='utf-8') as f:
+            timeline[p.stem] = [{'date': r['日期'], 'lane': r['線'], 'type': r['類型'], 'text': r['事件'],
+                                 'link': r['來源連結'], 'seen': r['可信度']} for r in csv.DictReader(f)]
+    for p in sorted((D / 'milestones').glob('*.csv')):
+        with open(p, encoding='utf-8') as f:
+            milestones[p.stem] = [{'date': r['日期'], 'amount': num(r['累計票房']), 'text': r['說明'], 'link': r['來源連結']}
+                                  for r in csv.DictReader(f)]
+    for p in sorted((D / 'ptt').glob('*.csv')):
+        wk = collections.Counter()
+        with open(p, encoding='utf-8') as f:
+            for r in csv.DictReader(f):
+                d = datetime.date.fromisoformat(r['發文時間'][:10])
+                wk[(d + datetime.timedelta(days=6 - d.weekday())).isoformat()] += 1
+        ptt[p.stem] = [{'week': k, 'posts': v} for k, v in sorted(wk.items())]
+
     out_films = []
     for f in films:
         c = by_name.get(f['片名'], {})
@@ -82,6 +100,9 @@ def main():
             'events': sorted(events.get(f['片名'], []), key=lambda e: e['date']),
             'taipei': sorted(taipei.get(f['片名'], []), key=lambda t: t['date']),
             'wiki': wiki.get(f['片名'], []),
+            'timeline': sorted(timeline.get(f['片名'], []), key=lambda e: e['date']),
+            'milestones': milestones.get(f['片名'], []),
+            'ptt': ptt.get(f['片名'], []),
         })
 
     tw = [r for r in cum if r['國別'] in ('中華民國', '台灣', '臺灣') and r['上映日'][:4] in ('2025', '2026')]

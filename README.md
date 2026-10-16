@@ -17,6 +17,10 @@
 | 台北／全台每日票房 | 臉書粉專「台北票房觀測站」每日貼文，人工轉錄 | 手動 |
 | 行銷事件 | 新聞、戲院與官方公告，每筆附來源 | 手動 |
 | 關注度 | Wikimedia Pageviews API | 手動 |
+| PTT 討論量 | PTT 電影板標題搜尋（`data/ptt/`） | 手動 |
+| YouTube 宣傳影片 | 影片頁的上架時間與觀看數（`data/youtube/`） | 手動 |
+| 四線時間軸 | 片方／媒體／明星宣傳／網路聲量，每筆附來源與可信度（`data/timeline/`） | 手動 |
+| 累計里程碑 | 沒有官方週末明細時，用新聞報導的累計數字（`data/milestones/`） | 手動 |
 
 官方開放資料只提供累計數字，每週票房是相鄰兩週快照相減而得。
 
@@ -35,5 +39,6 @@ python3 scripts/fetch_official.py                    # 抓官方資料、存快�
 python3 scripts/import_weekend_export.py 檔案.csv 片名  # 轉官網單片週末票房匯出檔
 python3 scripts/import_daily.py                      # 轉台北票房觀測站截圖轉錄稿
 python3 scripts/fetch_wiki_views.py 條目 起日 迄日      # 抓維基瀏覽量
+python3 scripts/fetch_ptt.py 片名                    # 抓 PTT 電影板標題含片名的文章
 python3 scripts/build_site_data.py                   # 整理成 site/data.json
 ```

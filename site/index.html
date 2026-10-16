@@ -7,7 +7,7 @@
 <meta name="description" content="用全國票房開放資料，看台灣電影怎麼被賣出去。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="common.js?v=2"></script>
@@ -26,6 +26,10 @@
     <div class="panel">
       <p class="sub" style="margin:0 0 12px" id="caseCaption"></p>
       <div class="chart"><canvas id="caseChart"></canvas></div>
+      <div id="laneBox" hidden>
+        <p class="sub" style="margin:20px 0 8px">同一段時間，四條線各做了什麼（點越大，那一週的動作越多；滑過去看內容）</p>
+        <div class="chart lanes"><canvas id="laneChart"></canvas></div>
+      </div>
     </div>
     <article class="prose" id="caseText">讀取中⋯⋯</article>
   </section>
@@ -53,8 +57,11 @@ let chart, data, caseChartObj;
 // 案例分析：每篇一個按鈕。range 是圖上要畫的週末區間
 const CASES = [
   { name: '大濛', from: '2025-11-09', to: '2026-03-01' },
-  { name: '冠軍之路', from: '2025-12-07', to: '2026-04-05' }
+  { name: '冠軍之路', from: '2025-12-07', to: '2026-04-05' },
+  { name: '96分鐘', from: '2025-05-25', to: '2026-02-15', lanes: true }
 ];
+const LANES = ['片方動作', '媒體報導', '明星宣傳', '網路聲量'];
+const AXIS_W = 64;  // 兩張圖左右軸固定寬度，週次才會上下對齊
 const caseMd = {};
 
 fetch('data.json').then(r => r.json()).then(d => {
@@ -84,7 +91,11 @@ fetch('data.json').then(r => r.json()).then(d => {
 function showCase(i) {
   const c = CASES[i];
   document.querySelectorAll('#caseTabs .tab').forEach((b, j) => b.setAttribute('aria-selected', i === j));
-  document.getElementById('caseCaption').textContent = c.name + '：週末票房（長條）與維基百科條目每週瀏覽量（線）';
+  const f = data.films.find(x => x.name === c.name);
+  const cum = f && !f.weekend.some(w => w.amount) && f.milestones.length;
+  document.getElementById('caseCaption').textContent = c.name + (cum
+    ? '：新聞報導的累計票房（點）與維基百科條目每週瀏覽量（線）。週末票房明細還沒匯入'
+    : '：週末票房（長條）與維基百科條目每週瀏覽量（線）');
   caseChart(c);
   const box = document.getElementById('caseText');
   if (caseMd[c.name]) { box.innerHTML = caseMd[c.name]; return; }
@@ -95,28 +106,82 @@ function showCase(i) {
   });
 }
 
+// 從 from 到 to 的每個週末（五～日），有官方週末明細就用明細，沒有就自己排日期
+function caseWeeks(f, c) {
+  const have = f.weekend.filter(w => w.week >= c.from && w.week <= c.to);
+  if (have.some(w => w.amount)) return have;
+  const out = [];
+  for (let d = new Date(c.from + 'T00:00:00Z'); d <= new Date(c.to + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 7)) {
+    const end = d.toISOString().slice(0, 10), start = new Date(d - 2 * 864e5).toISOString().slice(0, 10);
+    out.push({ start, week: end, amount: null });
+  }
+  return out;
+}
+const fixW = s => { s.width = AXIS_W; };
+
 function caseChart(c) {
   if (caseChartObj) caseChartObj.destroy();
+  if (laneChartObj) { laneChartObj.destroy(); laneChartObj = null; }
   const f = data.films.find(x => x.name === c.name);
   if (!f) return;
-  const s = f.weekend.filter(w => w.week >= c.from && w.week <= c.to);
+  const s = caseWeeks(f, c);
+  const labels = s.map(w => w.start.slice(5).replace('-', '/'));
   const views = Object.fromEntries(f.wiki.map(w => [w.week, w.views]));
+  const useCum = !s.some(w => w.amount) && f.milestones.length;
+  const cumAt = s.map(w => { const m = f.milestones.filter(x => weekOf(x.date, [w])); return m.length ? Math.max(...m.map(x => x.amount)) : null; });
+  const money = useCum
+    ? { type: 'line', label: '累計票房（新聞報導）', data: cumAt, borderColor: css('--bar'), backgroundColor: css('--bar'), showLine: true, spanGaps: true, borderWidth: 2, pointRadius: 4, yAxisID: 'y', order: 2 }
+    : { type: 'bar', label: '週末票房', data: s.map(w => w.amount), backgroundColor: css('--bar'), borderRadius: 3, yAxisID: 'y', order: 2 };
   caseChartObj = new Chart(document.getElementById('caseChart'), {
     data: {
-      labels: s.map(w => w.start.slice(5).replace('-', '/')),
+      labels,
       datasets: [
-        { type: 'bar', label: '週末票房', data: s.map(w => w.amount), backgroundColor: css('--bar'), borderRadius: 3, yAxisID: 'y', order: 2 },
+        money,
         { type: 'line', label: '維基瀏覽量（週）', data: s.map(w => views[w.week] ?? null), borderColor: css('--accent'), borderWidth: 2, pointRadius: 2, tension: .25, yAxisID: 'y1', order: 1 }
       ]
     },
     options: {
       maintainAspectRatio: false,
       plugins: { legend: { labels: { color: css('--muted') } },
-        tooltip: { callbacks: { label: c => c.datasetIndex === 0 ? fmt(c.raw) + '元' : Math.round(c.raw).toLocaleString() + ' 次' } } },
+        tooltip: { callbacks: { label: x => x.datasetIndex === 0 ? fmt(x.raw) + '元' : Math.round(x.raw).toLocaleString() + ' 次',
+          afterLabel: x => { if (!useCum || x.datasetIndex) return ''; const w = s[x.dataIndex]; return f.milestones.filter(m => weekOf(m.date, [w])).map(m => m.date.slice(5) + ' ' + m.text); } } } },
       scales: {
         x: { ticks: { color: css('--muted') }, grid: { display: false } },
-        y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') } },
-        y1: { position: 'right', ticks: { color: css('--muted'), callback: v => fmt(v) + '次' }, grid: { display: false } }
+        y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') }, afterFit: c.lanes ? fixW : undefined },
+        y1: { position: 'right', ticks: { color: css('--muted'), callback: v => fmt(v) + '次' }, grid: { display: false }, afterFit: c.lanes ? fixW : undefined }
+      }
+    }
+  });
+  const laneBox = document.getElementById('laneBox');
+  laneBox.hidden = !c.lanes;
+  if (c.lanes) laneChart(f, s, labels);
+}
+
+let laneChartObj;
+function laneChart(f, s, labels) {
+  const r0 = innerWidth < 560 ? 3 : 4;  // 手機上點小一點，才不會整串黏在一起
+  const colors = { '片方動作': css('--bar'), '媒體報導': css('--muted'), '明星宣傳': css('--accent'), '網路聲量': css('--ink') };
+  const datasets = LANES.map(lane => {
+    const pts = [];
+    s.forEach((w, i) => {
+      const evs = f.timeline.filter(e => e.lane === lane && weekOf(e.date, [w]));
+      if (evs.length) pts.push({ x: labels[i], y: lane, evs });
+    });
+    return { label: lane, data: pts, backgroundColor: colors[lane], borderColor: colors[lane],
+             pointRadius: pts.map(p => Math.min(r0 + 2 * p.evs.length, 3 * r0)), pointHoverRadius: pts.map(p => Math.min(r0 + 2 * p.evs.length, 3 * r0) + 2) };
+  });
+  laneChartObj = new Chart(document.getElementById('laneChart'), {
+    type: 'scatter',
+    data: { labels, datasets },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { title: x => x[0].raw.y + '｜' + x[0].raw.x + ' 那一週',
+          label: x => x.raw.evs.map(e => e.date.slice(5).replace('-', '/') + ' ' + (e.text.length > 46 ? e.text.slice(0, 46) + '⋯' : e.text)) } } },
+      scales: {
+        x: { type: 'category', labels, ticks: { color: css('--muted') }, grid: { display: false } },
+        y: { type: 'category', labels: LANES, offset: true, ticks: { color: css('--muted') }, grid: { color: css('--line') }, afterFit: fixW },
+        y1: { position: 'right', display: true, ticks: { display: false }, grid: { display: false }, border: { display: false }, afterFit: fixW }
       }
     }
   });
