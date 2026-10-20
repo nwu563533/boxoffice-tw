@@ -42,6 +42,15 @@
   </section>
 
   <section>
+    <h2>最新週末排行</h2>
+    <p class="sub" id="wkDates"></p>
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div><h3 style="font-size:16px;margin:0 0 4px">台北</h3><p class="sub" style="margin:0 0 8px" id="wkTpSum"></p><div id="wkTpTable"></div></div>
+      <div><h3 style="font-size:16px;margin:0 0 4px">全台</h3><p class="sub" style="margin:0 0 8px" id="wkNatSum"></p><div id="wkNatTable"></div></div>
+    </div>
+  </section>
+
+  <section>
     <h2>2025–2026 國片累計票房前 15 名</h2>
     <p class="sub">紅色是案例分析用的片。只算國別登記為「中華民國／台灣」的片，合拍片可能漏列。</p>
     <div class="bars" id="topBars"></div>
@@ -102,6 +111,20 @@ fetch('data.json').then(r => r.json()).then(d => {
   document.getElementById('tpTable').innerHTML = table(d.taipei_latest);
   document.getElementById('natTable').innerHTML = table(d.national_latest);
   document.getElementById('dayDates').textContent = `台北 ${d.taipei_latest.date}、全台 ${d.national_latest.date}。底色標示的是國片。`;
+
+
+  // 最新週末排行：粉專週一公布的完整版，有人次；累計放在片名下方，手機上欄位才不會擠
+  const chg = c => c === 'new' ? '<span style="color:var(--accent);font-weight:500">新片</span>' : (c === '-' || !c ? '—' : c);
+  const wkTable = t => t.rows.length ? `<table><thead><tr><th>#</th><th>片名</th><th class="n">週末</th><th class="n">人次</th><th class="n">較上週</th></tr></thead><tbody>` +
+    t.rows.map(x => `<tr class="${x.tw ? 'hl' : ''}"><td>${x.rank}</td><td>${x.film}<div style="font-size:12px;color:var(--muted)">累計 ${fmt(x.cum)}</div></td><td class="n">${fmt(x.amount)}</td><td class="n">${x.people ? Number(x.people).toLocaleString() : '—'}</td><td class="n">${chg(x.change)}</td></tr>`).join('') +
+    `</tbody></table>` : '<div class="note">還沒有週末資料。</div>';
+  const wkSum = t => t.total ? `總計 ${fmt(t.total.amount)}元、${Number(t.total.people).toLocaleString()} 人次（人次較上週 ${t.total.change}）` : '';
+  const wkLabel = k => k ? k.split('~').map(x => x.slice(5).replace('-', '/')).join('–') : '';
+  document.getElementById('wkTpTable').innerHTML = wkTable(d.weekend_taipei);
+  document.getElementById('wkNatTable').innerHTML = wkTable(d.weekend_national);
+  document.getElementById('wkTpSum').textContent = wkSum(d.weekend_taipei);
+  document.getElementById('wkNatSum').textContent = wkSum(d.weekend_national);
+  document.getElementById('wkDates').textContent = `${wkLabel(d.weekend_taipei.date)} 週末，粉專週一公布的完整版。「較上週」是週末票房的變動，底色標示的是國片。`;
 
   const max = d.top_tw[0]?.amount || 1;
   document.getElementById('topBars').innerHTML = d.top_tw.map(t => `

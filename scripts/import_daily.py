@@ -3,6 +3,7 @@
 轉錄稿格式（一張截圖一段）：
   @日期|地區|類型         例：@2026-10-07|台北|單日、@2026-10-02~2026-10-04|全台|週末
   片名|票房(萬)|累計(萬)|人次|變動率
+  !總和|票房(萬)|人次|較上週     （選填，週末段才有：粉專公布的週末總和，寫進 data/weekend_totals.csv）
 排名照出現順序。金額存成「元」。同一天同地區同類型如果重複出現，以後讀到的為準。
 
 用法：python3 scripts/import_daily.py
@@ -13,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def main():
-    rows = {}
+    rows, totals = {}, {}
     for p in sorted((ROOT / 'data' / 'raw_daily').glob('*.txt')):
         head, rank = None, 0
         for line in p.read_text(encoding='utf-8').splitlines():
@@ -22,6 +23,10 @@ def main():
                 continue
             if line.startswith('@'):
                 head, rank = line[1:].split('|'), 0
+                continue
+            if line.startswith('!'):
+                _, amt, people, change = line.split('|')
+                totals[(head[0], head[1], head[2])] = [head[0], head[1], head[2], round(float(amt) * 1e4), people, change]
                 continue
             rank += 1
             name, amt, cum, people, change = line.split('|')
@@ -52,6 +57,10 @@ def main():
         w = csv.writer(f)
         w.writerow(['日期', '地區', '類型', '排名', '片名', '票房', '累計', '人次', '變動率', '來源'])
         w.writerows(sorted(rows.values(), key=lambda r: (r[0], r[1], r[2], r[3] if r[3] != '' else 99, -r[5])))
+    with open(ROOT / 'data' / 'weekend_totals.csv', 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['日期', '地區', '類型', '總票房', '總人次', '較上週'])
+        w.writerows(sorted(totals.values()))
     days = sorted({(r[0], r[1]) for r in rows.values()})
     print(f'{len(rows)} 筆，{len(days)} 個（日期×地區）→ {out.relative_to(ROOT)}')
 

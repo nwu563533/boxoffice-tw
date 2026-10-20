@@ -131,6 +131,19 @@ def main():
                  'people': r['人次'], 'change': r['變動率'], 'tw': norm(r['片名']) in tw_names}
                 for r in daily if r['地區'] == region and r['類型'] == '單日' and r['日期'] == date]
 
+    # 最新週末：粉專週一公布的完整版（有人次），日期鍵是「起~迄」字串，取最新的一個
+    def weekend(region):
+        keys = sorted({r['日期'] for r in daily if r['地區'] == region and r['類型'] == '週末'})
+        if not keys:
+            return {'date': '', 'rows': [], 'total': None}
+        k = keys[-1]
+        tot = next((t for t in (rows('weekend_totals.csv') if (D / 'weekend_totals.csv').exists() else [])
+                    if t['日期'] == k and t['地區'] == region), None)
+        return {'date': k, 'total': {'amount': num(tot['總票房']), 'people': tot['總人次'], 'change': tot['較上週']} if tot else None,
+                'rows': [{'rank': int(r['排名'] or 99), 'film': r['片名'], 'amount': num(r['票房']), 'cum': num(r['累計']),
+                          'people': r['人次'], 'change': r['變動率'], 'tw': norm(r['片名']) in tw_names}
+                         for r in daily if r['地區'] == region and r['類型'] == '週末' and r['日期'] == k]}
+
     snaps = sorted((D / 'snapshots').glob('*.json'))
     out = {
         'updated': snaps[-1].stem if snaps else '',
@@ -145,6 +158,8 @@ def main():
         'taipei_daily': taipei_daily,
         'taipei_latest': {'date': latest_tp, 'rows': day_table('台北', latest_tp)},
         'national_latest': {'date': latest_all, 'rows': day_table('全台', latest_all)},
+        'weekend_taipei': weekend('台北'),
+        'weekend_national': weekend('全台'),
     }
     (ROOT / 'site' / 'data.json').write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
     print(f"site/data.json：{len(out_films)} 部追蹤片、{len(tw)} 部 2025–26 國片、{len(dist_list)} 家發行商，資料截至 {out['updated']}")
