@@ -119,7 +119,7 @@ fetch('data.json').then(r => r.json()).then(d => {
   const wkTable = t => t.rows.length ? `<table><thead><tr><th>#</th><th>片名</th><th class="n">週末</th><th class="n">人次</th><th class="n">較上週</th></tr></thead><tbody>` +
     t.rows.map(x => `<tr class="${x.tw ? 'hl' : ''}"><td>${x.rank}</td><td>${x.film}<div style="font-size:12px;color:var(--muted)">累計 ${fmt(x.cum)}</div></td><td class="n">${fmt(x.amount)}</td><td class="n">${x.people ? Number(x.people).toLocaleString() : '—'}</td><td class="n">${chg(x.change)}</td></tr>`).join('') +
     `</tbody></table>` : '<div class="note">還沒有週末資料。</div>';
-  const wkSum = t => t.total ? `總計 ${fmt(t.total.amount)}元、${Number(t.total.people).toLocaleString()} 人次（人次較上週 ${t.total.change}）` : '';
+  const wkSum = t => t.total ? `總計 ${fmt(t.total.amount)}元、${Number(t.total.people).toLocaleString()} 人次（票房較上週 ${t.total.change}）` : '';
   const wkLabel = k => k ? k.split('~').map(x => x.slice(5).replace('-', '/')).join('–') : '';
   document.getElementById('wkTpTable').innerHTML = wkTable(d.weekend_taipei);
   document.getElementById('wkNatTable').innerHTML = wkTable(d.weekend_national);
