@@ -71,7 +71,7 @@
 </footer>
 
 <script>
-fetch('data.json').then(r => r.json()).then(d => {
+fetch('data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
   document.getElementById('meta').textContent = `全國資料截至 ${d.updated}｜已累積 ${d.snapshots} 週快照`;
   const tracked = new Set(d.films.map(f => f.name));
 

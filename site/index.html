@@ -71,7 +71,7 @@ const LANES = ['片方動作', '媒體報導', '明星宣傳', '網路聲量'];
 const AXIS_W = 64;  // 兩張圖左右軸固定寬度，週次才會上下對齊
 const caseMd = {};
 
-fetch('data.json').then(r => r.json()).then(d => {
+fetch('data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
   data = d;
   const cards = document.getElementById('cards');
   d.films.forEach((f, i) => {
