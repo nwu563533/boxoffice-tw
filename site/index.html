@@ -13,7 +13,7 @@
 <script src="common.js?v=2"></script>
 </head>
 <body>
-<nav class="nav wrap"><a href="index.html" aria-current="page">案例分析</a><a href="tracker.html">票房追蹤</a></nav>
+<nav class="nav wrap"><a href="tracker.html">票房追蹤</a><a href="index.html" id="navBox">票房案例分析</a><a href="index.html?g=finance" id="navFin">財務案例分析</a></nav>
 <header class="wrap">
   <h1>國片票房觀察</h1>
   <p class="lede">用全國票房開放資料，看台灣電影怎麼被賣出去：哪個行銷動作之後，票房動了。</p>
@@ -21,7 +21,7 @@
 
 <main class="wrap">
   <section id="cases">
-    <h2>案例分析</h2>
+    <h2 id="caseTitle">票房案例分析</h2>
     <div class="tabs" role="tablist" id="caseTabs"></div>
     <div class="panel">
       <p class="sub" style="margin:0 0 12px" id="caseCaption"></p>
@@ -60,8 +60,13 @@ const CASES = [
   { name: '大濛', from: '2025-11-09', to: '2026-03-01' },
   { name: '冠軍之路', from: '2025-12-07', to: '2026-04-05' },
   { name: '96分鐘', from: '2025-05-25', to: '2026-02-15', lanes: true },
-  { name: '96分鐘：回本了嗎', film: '96分鐘', from: '2025-08-24', to: '2026-01-04' }
+  { name: '96分鐘', md: '96分鐘：回本了嗎', group: 'finance', from: '2025-08-24', to: '2026-01-04' }
 ];
+// 上方導覽分兩組：票房案例分析（預設）／財務案例分析（?g=finance）
+const GROUP = new URLSearchParams(location.search).get('g') === 'finance' ? 'finance' : 'boxoffice';
+const LIST = CASES.filter(c => (c.group || 'boxoffice') === GROUP);
+document.getElementById(GROUP === 'finance' ? 'navFin' : 'navBox').setAttribute('aria-current', 'page');
+document.getElementById('caseTitle').textContent = GROUP === 'finance' ? '財務案例分析' : '票房案例分析';
 const LANES = ['片方動作', '媒體報導', '明星宣傳', '網路聲量'];
 const AXIS_W = 64;  // 兩張圖左右軸固定寬度，週次才會上下對齊
 const caseMd = {};
@@ -81,7 +86,7 @@ fetch('data.json').then(r => r.json()).then(d => {
   });
   if (d.films.length) showFilm(d.films[0]);
   const tabs = document.getElementById('caseTabs');
-  CASES.forEach((c, i) => {
+  LIST.forEach((c, i) => {
     const b = document.createElement('button');
     b.className = 'tab'; b.setAttribute('role', 'tab'); b.textContent = c.name;
     b.onclick = () => showCase(i);
@@ -91,7 +96,7 @@ fetch('data.json').then(r => r.json()).then(d => {
 });
 
 function showCase(i) {
-  const c = CASES[i];
+  const c = LIST[i], key = c.md || c.name;
   document.querySelectorAll('#caseTabs .tab').forEach((b, j) => b.setAttribute('aria-selected', i === j));
   const f = data.films.find(x => x.name === (c.film || c.name));
   const cum = f && !f.weekend.some(w => w.amount) && f.milestones.length;
@@ -100,11 +105,11 @@ function showCase(i) {
     : '：週末票房（長條）與維基百科條目每週瀏覽量（線）');
   caseChart(c);
   const box = document.getElementById('caseText');
-  if (caseMd[c.name]) { box.innerHTML = caseMd[c.name]; return; }
+  if (caseMd[key]) { box.innerHTML = caseMd[key]; return; }
   box.textContent = '讀取中⋯⋯';
-  fetch('cases/' + encodeURIComponent(c.name) + '.md').then(r => r.text()).then(md => {
-    caseMd[c.name] = marked.parse(md);
-    if (document.querySelector('#caseTabs .tab[aria-selected="true"]')?.textContent === c.name) box.innerHTML = caseMd[c.name];
+  fetch('cases/' + encodeURIComponent(key) + '.md').then(r => r.text()).then(md => {
+    caseMd[key] = marked.parse(md);
+    if (document.querySelectorAll('#caseTabs .tab')[i]?.getAttribute('aria-selected') === 'true') box.innerHTML = caseMd[key];
   });
 }
 
