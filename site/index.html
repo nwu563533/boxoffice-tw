@@ -59,7 +59,8 @@ let chart, data, caseChartObj;
 const CASES = [
   { name: '大濛', from: '2025-11-09', to: '2026-03-01' },
   { name: '冠軍之路', from: '2025-12-07', to: '2026-04-05' },
-  { name: '96分鐘', from: '2025-05-25', to: '2026-02-15', lanes: true }
+  { name: '96分鐘', from: '2025-05-25', to: '2026-02-15', lanes: true },
+  { name: '96分鐘：回本了嗎', film: '96分鐘', from: '2025-08-24', to: '2026-01-04' }
 ];
 const LANES = ['片方動作', '媒體報導', '明星宣傳', '網路聲量'];
 const AXIS_W = 64;  // 兩張圖左右軸固定寬度，週次才會上下對齊
@@ -92,9 +93,9 @@ fetch('data.json').then(r => r.json()).then(d => {
 function showCase(i) {
   const c = CASES[i];
   document.querySelectorAll('#caseTabs .tab').forEach((b, j) => b.setAttribute('aria-selected', i === j));
-  const f = data.films.find(x => x.name === c.name);
+  const f = data.films.find(x => x.name === (c.film || c.name));
   const cum = f && !f.weekend.some(w => w.amount) && f.milestones.length;
-  document.getElementById('caseCaption').textContent = c.name + (cum
+  document.getElementById('caseCaption').textContent = (c.film || c.name) + (cum
     ? '：新聞報導的累計票房（點）與維基百科條目每週瀏覽量（線）。週末票房明細還沒匯入'
     : '：週末票房（長條）與維基百科條目每週瀏覽量（線）');
   caseChart(c);
@@ -123,7 +124,7 @@ const fixW = s => { s.width = AXIS_W; };
 function caseChart(c) {
   if (caseChartObj) caseChartObj.destroy();
   if (laneChartObj) { laneChartObj.destroy(); laneChartObj = null; }
-  const f = data.films.find(x => x.name === c.name);
+  const f = data.films.find(x => x.name === (c.film || c.name));
   if (!f) return;
   const s = caseWeeks(f, c);
   const labels = s.map(w => w.start.slice(5).replace('-', '/'));
