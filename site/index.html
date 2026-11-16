@@ -57,9 +57,10 @@
 let chart, data, caseChartObj;
 // 案例分析：每篇一個按鈕。range 是圖上要畫的週末區間
 const CASES = [
-  { name: '大濛', from: '2025-11-09', to: '2026-03-01' },
-  { name: '冠軍之路', from: '2025-12-07', to: '2026-04-05' },
+  { name: '大濛', from: '2025-11-09', to: '2026-03-01', lanes: true },
+  { name: '冠軍之路', from: '2025-11-02', to: '2026-04-05', lanes: true },
   { name: '96分鐘', from: '2025-05-25', to: '2026-02-15', lanes: true },
+  { name: '左撇子女孩', from: '2025-08-24', to: '2026-02-15', lanes: true },
   { name: '96分鐘', md: '96分鐘：回本了嗎', group: 'finance', from: '2025-08-24', to: '2026-01-04' }
 ];
 // 上方導覽分兩組：票房案例分析（預設）／財務案例分析（?g=finance）
