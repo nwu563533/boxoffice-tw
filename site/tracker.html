@@ -102,7 +102,7 @@ fetch('data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
       options: { maintainAspectRatio: false, spanGaps: true,
         plugins: { legend: { labels: { color: css('--muted') } }, tooltip: { callbacks: { label: c => c.dataset.label + '：' + fmt(c.raw) + '元' } } },
         scales: { x: { ticks: { color: css('--muted') }, grid: { display: false } },
-                  y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') } } } }
+                  y: { ticks: { color: css('--muted'), callback: v => fmtAxis(v) }, grid: { color: css('--line') } } } }
     });
   }
 

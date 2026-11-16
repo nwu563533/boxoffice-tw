@@ -145,7 +145,7 @@ function caseChart(c) {
       labels,
       datasets: [
         money,
-        { type: 'line', label: '維基瀏覽量（週）', data: s.map(w => views[w.week] ?? null), borderColor: css('--accent'), borderWidth: 2, pointRadius: 2, tension: .25, yAxisID: 'y1', order: 1 }
+        { type: 'line', label: '維基瀏覽量（週一到週日）', data: s.map(w => views[w.week] ?? null), borderColor: css('--accent'), borderWidth: 2, pointRadius: 2, tension: .25, yAxisID: 'y1', order: 1 }
       ]
     },
     options: {
@@ -155,8 +155,8 @@ function caseChart(c) {
           afterLabel: x => { if (!useCum || x.datasetIndex) return ''; const w = s[x.dataIndex]; return f.milestones.filter(m => weekOf(m.date, [w])).map(m => m.date.slice(5) + ' ' + m.text); } } } },
       scales: {
         x: { ticks: { color: css('--muted') }, grid: { display: false } },
-        y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') }, afterFit: c.lanes ? fixW : undefined },
-        y1: { position: 'right', ticks: { color: css('--muted'), callback: v => fmt(v) + '次' }, grid: { display: false }, afterFit: c.lanes ? fixW : undefined }
+        y: { ticks: { color: css('--muted'), callback: v => fmtAxis(v) }, grid: { color: css('--line') }, afterFit: c.lanes ? fixW : undefined },
+        y1: { position: 'right', ticks: { color: css('--muted'), callback: v => fmtAxis(v) + '次' }, grid: { display: false }, afterFit: c.lanes ? fixW : undefined }
       }
     }
   });
@@ -233,7 +233,7 @@ function showFilm(f) {
         } } } },
       scales: {
         x: { ticks: { color: css('--muted') }, grid: { display: false } },
-        y: { ticks: { color: css('--muted'), callback: v => fmt(v) }, grid: { color: css('--line') } },
+        y: { ticks: { color: css('--muted'), callback: v => fmtAxis(v) }, grid: { color: css('--line') } },
         y1: { position: 'right', ticks: { color: css('--muted'), callback: v => v + ' 院' }, grid: { display: false } }
       }
     }
