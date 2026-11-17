@@ -117,6 +117,11 @@ def main():
     nat = rows('weekly_national.csv')
     last = max((r['週截止日'] for r in nat), default='')
     tw_names = {norm(r['片名']) for r in cum if r['國別'] in ('中華民國', '台灣', '臺灣')}
+    # 官方累計資料每週三才更新，剛上映的國片還查不到國別；data/tw_manual.csv 是手動補的名單（附來源），官方資料進來後可以拿掉
+    manual = ROOT / 'data' / 'tw_manual.csv'
+    if manual.exists():
+        with open(manual, encoding='utf-8') as f:
+            tw_names |= {norm(r['片名']) for r in csv.DictReader(f)}
     this_week = sorted(({'name': r['片名'], 'distributor': r['發行商'], 'theaters': num(r['院數']),
                          'amount': num(r['當週金額']), 'tw': norm(r['片名']) in tw_names}
                         for r in nat if r['週截止日'] == last), key=lambda x: -x['amount'])[:10]
