@@ -28,7 +28,7 @@
 
   <section>
     <h2>台北每日票房</h2>
-    <p class="sub">資料整理自臉書粉專「台北票房觀測站」每日貼文。曲線只畫最新一天台北前 8 名的片。10/4 粉專沒有單日貼文，是用前後兩天的累計相減推算的。</p>
+    <p class="sub">資料整理自臉書粉專「台北票房觀測站」每日貼文。曲線畫最新一天台北前 8 名的片，最多回推 30 天，從其中最早上映的那部開始畫。粉專沒有單日貼文的日子，是用前後兩天的累計相減推算的。</p>
     <div id="taipeiBox"></div>
   </section>
 
@@ -90,9 +90,14 @@ fetch('data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
     tb.innerHTML = `<div class="note">還沒有資料。開始整理後，這裡會出現每部片的台北每日票房曲線。</div>`;
   } else {
     tb.innerHTML = '<div class="panel"><div class="chart"><canvas id="taipeiChart"></canvas></div></div>';
-    const dates = [...new Set(d.taipei_daily.map(x => x.date))].sort();
     const latest = d.taipei_latest.date;
+    // 只畫最近 30 天，舊的日期隨時間滑出去
+    const from = new Date(new Date(latest).getTime() - 30 * 864e5).toISOString().slice(0, 10);
+    const dates = [...new Set(d.taipei_daily.map(x => x.date))].filter(x => x >= from).sort();
     const films = d.taipei_daily.filter(x => x.date === latest && x.rank <= 8).sort((a, b) => a.rank - b.rank).map(x => x.film);
+    // 起點再往後收：從這幾部片第一次有數字的那天開始，前面全空的日子不畫
+    const firstHit = dates.findIndex(dt => d.taipei_daily.some(x => x.date === dt && films.includes(x.film)));
+    if (firstHit > 0) dates.splice(0, firstHit);
     const palette = [css('--accent'), css('--bar'), '#c49a3c', '#6b8f71', '#8a6fa8', '#5f8fb0', '#b0705f', '#7f8c8d'];
     new Chart(document.getElementById('taipeiChart'), {
       type: 'line',
