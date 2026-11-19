@@ -34,7 +34,7 @@
     <article class="prose" id="caseText">讀取中⋯⋯</article>
   </section>
 
-  <section>
+  <section id="filmsSec">
     <h2>分析用的影片</h2>
     <p class="sub">點一張卡片，下面會換成那部片的票房曲線與行銷時間點。曲線是<b>週末（五～日）票房</b>，灰線是院數，紅色長條是那一週有行銷動作。</p>
     <div class="cards" id="cards"></div>
@@ -68,6 +68,7 @@ const GROUP = new URLSearchParams(location.search).get('g') === 'finance' ? 'fin
 const LIST = CASES.filter(c => (c.group || 'boxoffice') === GROUP);
 document.getElementById(GROUP === 'finance' ? 'navFin' : 'navBox').setAttribute('aria-current', 'page');
 document.getElementById('caseTitle').textContent = GROUP === 'finance' ? '財務案例分析' : '票房案例分析';
+if (GROUP === 'finance') document.getElementById('filmsSec').hidden = true;
 if (GROUP === 'finance') document.getElementById('lede').textContent = '用公開資料試算：一部台灣電影的錢從哪裡來，回本了沒有。';
 const LANES = ['片方動作', '媒體報導', '明星宣傳', '網路聲量'];
 const AXIS_W = 64;  // 兩張圖左右軸固定寬度，週次才會上下對齊
