@@ -1,17 +1,17 @@
 :root{
-  /* 2026-11-21 試做：參考 awesome-design-md 的 WIRED 分析（白底黑字、襯線標題與長文、無彩色強調、直角、細線） */
+  /* 2026-11-21 試做：參考 awesome-design-md 的 WIRED 分析（白底黑字、襯線標題與長文、直角、細線；重點色保留原本的橘，芊 11/21 要的） */
   --bg:#ffffff; --surface:#ffffff; --ink:#000000; --muted:#757575; --line:#e0e0e0;
-  --accent:#000000; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0; --link:#057dbc;
+  --accent:#b4442c; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0; --link:#057dbc;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#ffffff; --surface:#ffffff; --ink:#000000; --muted:#757575; --line:#e0e0e0;
-    --accent:#000000; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0;
+    --accent:#b4442c; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0;
   }
 }
 :root[data-theme="dark"]{
   --bg:#ffffff; --surface:#ffffff; --ink:#000000; --muted:#757575; --line:#e0e0e0;
-  --accent:#000000; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0;
+  --accent:#b4442c; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,sans-serif;line-height:1.7;color-scheme:light}
@@ -52,7 +52,7 @@ tr.hl td{background:var(--accent-soft)}
 .prose h2{font-family:"Noto Sans TC",system-ui,sans-serif;font-weight:700;font-size:20px;margin:40px 0 8px}
 .prose p,.prose li{font-family:"Noto Serif TC",Georgia,serif;font-size:18px;line-height:1.85}
 .prose table{margin:12px 0;font-size:14px}
-.prose strong{color:var(--ink);font-weight:600}
+.prose strong{color:var(--accent);font-weight:600}
 .prose a{color:var(--link)}
 @media (max-width:560px){.prose table{display:block;overflow-x:auto;white-space:nowrap}}
 footer{padding:40px 0 64px;font-size:13px;color:var(--muted)}
