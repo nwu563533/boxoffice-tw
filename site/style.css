@@ -1,20 +1,20 @@
 :root{
-  /* 2026-11-21 試做：參考 awesome-design-md 的 WIRED 分析（白底黑字、襯線標題與長文、直角、細線；重點色保留原本的橘，芊 11/21 要的） */
-  --bg:#ffffff; --surface:#ffffff; --ink:#000000; --muted:#757575; --line:#e0e0e0;
-  --accent:#b4442c; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0; --link:#057dbc;
+  /* 2026-11-21 試做：參考 awesome-design-md 的 WIRED 分析（襯線標題與長文、直角、細線；重點色保留原本的橘；芊 11/21 要黑底，所以改成深色紙面） */
+  --bg:#121212; --surface:#121212; --ink:#f2f2f2; --muted:#9a9a9a; --line:#2e2e2e;
+  --accent:#e07a5f; --accent-soft:#2a2a2a; --bar:#7a7a7a; --bar-soft:#242424; --link:#6cb6e0;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#ffffff; --surface:#ffffff; --ink:#000000; --muted:#757575; --line:#e0e0e0;
-    --accent:#b4442c; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0;
+    --bg:#121212; --surface:#121212; --ink:#f2f2f2; --muted:#9a9a9a; --line:#2e2e2e;
+    --accent:#e07a5f; --accent-soft:#2a2a2a; --bar:#7a7a7a; --bar-soft:#242424;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#ffffff; --surface:#ffffff; --ink:#000000; --muted:#757575; --line:#e0e0e0;
-  --accent:#b4442c; --accent-soft:#f5f5f5; --bar:#bdbdbd; --bar-soft:#f0f0f0;
+  --bg:#121212; --surface:#121212; --ink:#f2f2f2; --muted:#9a9a9a; --line:#2e2e2e;
+  --accent:#e07a5f; --accent-soft:#2a2a2a; --bar:#7a7a7a; --bar-soft:#242424;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,sans-serif;line-height:1.7;color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,sans-serif;line-height:1.7;color-scheme:dark}
 .wrap{max-width:1040px;margin:0 auto;padding:0 16px}
 header{padding:72px 0 40px;border-bottom:2px solid var(--ink)}
 h1{font-family:"Noto Serif TC",Georgia,serif;font-weight:400;font-size:clamp(36px,7vw,64px);line-height:1.05;margin:0 0 16px;letter-spacing:-.005em}
@@ -67,5 +67,5 @@ header{padding-top:40px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .tab{font:inherit;font-size:15px;font-weight:700;color:var(--ink);background:var(--bg);border:1px solid var(--ink);border-radius:0;padding:10px 20px;cursor:pointer;transition:background .15s,color .15s}
 .tab:hover{background:var(--accent-soft)}
-.tab[aria-selected="true"]{color:#ffffff;background:var(--ink);border-color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--bg);background:var(--ink);border-color:var(--ink)}
 .chart.lanes{height:220px}
